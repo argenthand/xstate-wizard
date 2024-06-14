@@ -1,21 +1,20 @@
-import {useForm, SubmitHandler} from "react-hook-form";
+import {SubmitHandler, useForm} from "react-hook-form";
 import {UserInformationInputs} from "./types";
-import * as yup from 'yup';
 import {yupResolver} from "@hookform/resolvers/yup";
+import {userSchema} from "./schemas/user.ts";
 
-const schema = yup.object({
-  firstName: yup.string().required(),
-  lastName: yup.string().required(),
-  dateOfBirth: yup.date().default(() => new Date()).required(),
-});
-
-function UserInformation({saveUserInfo}: {saveUserInfo: (data: UserInformationInputs) => void}) {
+function UserInformation({saveUserInfo, goToAccountInfo, defaultValues}: {
+  saveUserInfo: (data: UserInformationInputs) => void;
+  goToAccountInfo: () => void;
+  defaultValues: UserInformationInputs;
+}) {
   const {
     register,
     handleSubmit,
-    formState: { errors }
+    formState: {errors}
   } = useForm<UserInformationInputs>({
-    resolver: yupResolver(schema),
+    resolver: yupResolver(userSchema),
+    defaultValues
   });
 
   const onSubmit: SubmitHandler<UserInformationInputs> = (data) => saveUserInfo(data);
@@ -32,13 +31,13 @@ function UserInformation({saveUserInfo}: {saveUserInfo: (data: UserInformationIn
       </div>
 
       <div>
-        <input placeholder="11/16/1993" {...register("dateOfBirth")} />
+        <input placeholder="11/16/1993" type="date" {...register("dateOfBirth")} />
         {errors.dateOfBirth && <span>{errors.dateOfBirth?.message}</span>}
       </div>
 
       <div>
-        <input type="submit" />
-        <input type="reset" />
+        <input type="submit" disabled={!!errors.firstName || !!errors.lastName || !!errors.dateOfBirth} />
+        <input type="button" value="Back" onClick={goToAccountInfo} />
       </div>
     </form>
   );

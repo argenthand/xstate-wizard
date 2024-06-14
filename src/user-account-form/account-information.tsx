@@ -1,24 +1,20 @@
 import {SubmitHandler, useForm} from "react-hook-form";
 import {AccountInformationInputs} from "./types";
-import * as yup from 'yup';
 import {yupResolver} from "@hookform/resolvers/yup";
+import {accountSchema} from "./schemas/account.ts";
 
-const schema = yup.object({
-  username: yup.string().required(),
-  email: yup.string().email().required(),
-});
-
-function AccountInformation({saveAccountInfo}: {saveAccountInfo: (data: AccountInformationInputs) => void}) {
+function AccountInformation({saveAccountInfo, resetForm, defaultValues}: {
+  saveAccountInfo: (data: AccountInformationInputs) => void;
+  resetForm: () => void;
+  defaultValues: AccountInformationInputs;
+}) {
   const {
     register,
     handleSubmit,
-    formState: { errors }
+    formState: {errors}
   } = useForm<AccountInformationInputs>({
-    resolver: yupResolver(schema),
-    defaultValues: {
-      username: "thesilverhand",
-      email: "feedback@thesilverhand.blog",
-    }
+    resolver: yupResolver(accountSchema),
+    defaultValues
   });
 
   const onSubmit: SubmitHandler<AccountInformationInputs> = (data) => saveAccountInfo(data);
@@ -35,8 +31,10 @@ function AccountInformation({saveAccountInfo}: {saveAccountInfo: (data: AccountI
       </div>
 
       <div>
-        <input type="submit" />
-        <input type="reset" />
+        <input type="submit" disabled={!!errors.email || !!errors.username} />
+        <input type="button" value="Cancel" onClick={() => {
+          resetForm();
+        }} />
       </div>
     </form>
   );
