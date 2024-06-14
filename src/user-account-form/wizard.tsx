@@ -31,13 +31,17 @@ function WizardForm() {
 
   if (isCapturingUserInfo) {
     return <UserInformation saveUserInfo={(data: UserInformationInputs) => {
-      actorRef.send({type: 'SAVE.USER', data})
+      actorRef.send({type: 'SAVE.USER', data: {
+        firstName: data.firstName,
+        lastName: data.lastName,
+        dateOfBirth: data.dateOfBirth.toISOString().split('T')[0]
+      }})
     }} goToAccountInfo={() => {
       actorRef.send({type: 'BACK'})
     }} defaultValues={{
       firstName,
       lastName,
-      dateOfBirth
+      dateOfBirth: new Date(dateOfBirth)
     }} />
   }
 

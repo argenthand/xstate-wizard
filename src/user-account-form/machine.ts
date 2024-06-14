@@ -82,7 +82,7 @@ export const formMachine = setup({
   context: {
     firstName: '',
     lastName: '',
-    dateOfBirth: '1970-01-01',
+    dateOfBirth: '',
     email: '',
     username: ''
   },
