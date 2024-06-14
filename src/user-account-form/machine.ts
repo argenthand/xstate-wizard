@@ -5,22 +5,35 @@ export const formMachine = setup({
     context: {} as {
       firstName: string,
       lastName: string,
-      dateOfBirth: Date,
+      dateOfBirth: string,
+      username: string,
+      email: string,
+    },
+    input: {} as {
+      firstName: string,
+      lastName: string,
+      dateOfBirth: string,
       username: string,
       email: string,
     },
     events: {} as
       | { type: 'START' }
-      | { type: 'SAVE.USER', data: {
+      | { type: 'BACK' }
+      | { type: 'RESET' }
+      | {
+      type: 'SAVE.USER', data: {
         firstName: string;
         lastName: string;
-        dateOfBirth: Date;
-      } }
-      | { type: 'SAVE.ACCOUNT', data: {
+        dateOfBirth: string;
+      }
+    }
+      | {
+      type: 'SAVE.ACCOUNT', data: {
         username: string;
         email: string;
-      } }
-    | { type: 'RETRY' }
+      }
+    }
+      | { type: 'RETRY' }
 
   },
   actions: {
@@ -49,7 +62,7 @@ export const formMachine = setup({
       return {
         firstName: '',
         lastName: '',
-        dateOfBirth: new Date(),
+        dateOfBirth: '',
         email: '',
         username: ''
       }
@@ -59,7 +72,8 @@ export const formMachine = setup({
   actors: {
     submitUserAccountInfo: fromPromise(async ({input}) => {
       console.log('Submitting user account details', {...input});
-      return await Promise.resolve();
+      const randomBit = Math.floor(Math.random() * 2);
+      return randomBit === 0 ? await Promise.reject() : await Promise.resolve();
     })
   }
 }).createMachine({
@@ -68,15 +82,15 @@ export const formMachine = setup({
   context: {
     firstName: '',
     lastName: '',
-    dateOfBirth: new Date(),
-    username: '',
-    email: ''
+    dateOfBirth: '1970-01-01',
+    email: '',
+    username: ''
   },
   states: {
     'idle': {
       on: {
         START: {
-          target: 'capturing-user-info'
+          target: 'capturing-account-info'
         }
       }
     },
@@ -84,7 +98,10 @@ export const formMachine = setup({
       on: {
         'SAVE.USER': {
           actions: ['saveUserInfo'],
-          target: 'capturing-account-info',
+          target: 'submitting',
+        },
+        'BACK': {
+          target: 'capturing-account-info'
         }
       }
     },
@@ -92,7 +109,11 @@ export const formMachine = setup({
       on: {
         'SAVE.ACCOUNT': {
           actions: ['saveAccountInfo'],
-          target: 'submitting'
+          target: 'capturing-user-info'
+        },
+        'RESET': {
+          target: 'idle',
+          actions: ['resetContext']
         }
       }
     },
@@ -114,7 +135,7 @@ export const formMachine = setup({
     'error': {
       on: {
         RETRY: {
-          target: 'capturing-account-info'
+          target: 'capturing-user-info'
         }
       }
     },

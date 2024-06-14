@@ -1,34 +1,67 @@
-import {useMachine} from "@xstate/react";
+import {useActorRef} from "@xstate/react";
 import {formMachine} from "./machine.ts";
 import UserInformation from "./user-information.tsx";
 import AccountInformation from "./account-information.tsx";
 import {AccountInformationInputs, UserInformationInputs} from "./types";
+import {useMachineState} from "./hooks/use.machine.state.ts";
+import {useMachineContext} from "./hooks/use.machine.context.ts";
 
 function WizardForm() {
-  const [state, send] = useMachine(formMachine);
+  const actorRef = useActorRef(formMachine);
 
-  if (state.matches('idle')) {
-    return <button onClick={() => send({type: 'START'})}>Get Started</button>
+  const {
+    isIdle,
+    isCapturingUserInfo,
+    isCapturingAccountInfo,
+    isComplete,
+    isError,
+    isSubmitting
+  } = useMachineState(actorRef);
+  const {
+    firstName,
+    lastName,
+    dateOfBirth,
+    username,
+    email
+  } = useMachineContext(actorRef);
+
+  if (isIdle) {
+    return <button onClick={() => actorRef.send({type: 'START'})}>Get Started</button>
   }
 
-  if (state.matches('capturing-user-info')) {
+  if (isCapturingUserInfo) {
     return <UserInformation saveUserInfo={(data: UserInformationInputs) => {
-      send({type: 'SAVE.USER', data})
+      actorRef.send({type: 'SAVE.USER', data})
+    }} goToAccountInfo={() => {
+      actorRef.send({type: 'BACK'})
+    }} defaultValues={{
+      firstName,
+      lastName,
+      dateOfBirth
     }} />
   }
 
-  if (state.matches('capturing-account-info')) {
+  if (isCapturingAccountInfo) {
     return <AccountInformation saveAccountInfo={(data: AccountInformationInputs) => {
-      send({type: 'SAVE.ACCOUNT', data})
+      actorRef.send({type: 'SAVE.ACCOUNT', data})
+    }} resetForm={() => {
+      actorRef.send({type: 'RESET'})
+    }} defaultValues={{
+      username,
+      email
     }} />
   }
 
-  if (state.matches('complete')) {
+  if (isComplete) {
     return <h4>User details saved successfully!</h4>
   }
 
-  if (state.matches('error')) {
-    return <button onClick={() => send({type: 'RETRY'})}>Retry</button>
+  if (isSubmitting) {
+    return <h4>Submitting...</h4>
+  }
+
+  if (isError) {
+    return <button onClick={() => actorRef.send({type: 'RETRY'})}>Retry</button>
   }
 }
 
