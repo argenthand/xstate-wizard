@@ -7,7 +7,7 @@ export const formMachine = setup({
       lastName: string,
       dateOfBirth: string,
       username: string,
-      email: string,
+      email: string
     },
     input: {} as {
       firstName: string,
@@ -34,7 +34,6 @@ export const formMachine = setup({
       }
     }
       | { type: 'RETRY' }
-
   },
   actions: {
     saveUserInfo: assign(({context, event}) => {
@@ -55,7 +54,7 @@ export const formMachine = setup({
       return {
         ...context,
         username: event.data.username,
-        email: event.data.email,
+        email: event.data.email
       }
     }),
     resetContext: assign(() => {
@@ -68,13 +67,21 @@ export const formMachine = setup({
       }
     }),
     showErrorMessage: () => alert('An error occurred. Please try again.'),
+    showUsernameError: () => alert('Username is already taken. Please try a different username.'),
   },
   actors: {
     submitUserAccountInfo: fromPromise(async ({input}) => {
       console.log('Submitting user account details', {...input});
       const randomBit = Math.floor(Math.random() * 2);
       return randomBit === 0 ? await Promise.reject() : await Promise.resolve();
-    })
+    }),
+    checkUsernameAvailability: fromPromise(async ({input}: { input: { username: string; } }) => {
+      console.log('Checking username availability', input.username);
+      if (input.username.toLowerCase() === 'thesilverhand') {
+        return await Promise.reject();
+      }
+      return await Promise.resolve();
+    }),
   }
 }).createMachine({
   id: 'form-machine',
@@ -109,7 +116,7 @@ export const formMachine = setup({
       on: {
         'SAVE.ACCOUNT': {
           actions: ['saveAccountInfo'],
-          target: 'capturing-user-info'
+          target: 'checking-username-availability'
         },
         'RESET': {
           target: 'idle',
@@ -117,11 +124,34 @@ export const formMachine = setup({
         }
       }
     },
+    'checking-username-availability': {
+      invoke: {
+        id: 'checking-username-availability',
+        src: 'checkUsernameAvailability',
+        input: ({context}) => ({username: context.username}),
+        onDone: {
+          target: 'capturing-user-info'
+        },
+        onError: {
+          actions: ['showUsernameError'],
+          target: 'capturing-account-info'
+        }
+      }
+    },
     'submitting': {
       invoke: {
         id: 'submitting-user-account-info',
         src: 'submitUserAccountInfo',
-        input: ({context}) => ({...context}),
+        input: ({context}) => ({
+          userDetails: {
+            name: `${context.firstName} ${context.lastName}`,
+            dateOfBirth: context.dateOfBirth
+          },
+          accountDetails: {
+            username: context.username,
+            email: context.email
+          }
+        }),
         onDone: {
           target: 'complete',
           actions: ['resetContext']
