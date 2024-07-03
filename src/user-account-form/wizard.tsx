@@ -1,14 +1,11 @@
 import {useActorRef} from "@xstate/react";
-import {formMachine} from "./machine.ts";
+import {formMachine, useMachineContext, useMachineState} from "pii-state-machine";
 import UserInformation from "./user-information.tsx";
 import AccountInformation from "./account-information.tsx";
 import {AccountInformationInputs, UserInformationInputs} from "./types";
-import {useMachineState} from "./hooks/use.machine.state.ts";
-import {useMachineContext} from "./hooks/use.machine.context.ts";
 
 function WizardForm() {
   const actorRef = useActorRef(formMachine);
-
   const {
     isIdle,
     isCapturingUserInfo,
@@ -31,11 +28,13 @@ function WizardForm() {
 
   if (isCapturingUserInfo) {
     return <UserInformation saveUserInfo={(data: UserInformationInputs) => {
-      actorRef.send({type: 'SAVE.USER', data: {
-        firstName: data.firstName,
-        lastName: data.lastName,
-        dateOfBirth: data.dateOfBirth.toISOString().split('T')[0]
-      }})
+      actorRef.send({
+        type: 'SAVE.USER', data: {
+          firstName: data.firstName,
+          lastName: data.lastName,
+          dateOfBirth: data.dateOfBirth.toISOString().split('T')[0]
+        }
+      })
     }} goToAccountInfo={() => {
       actorRef.send({type: 'BACK'})
     }} defaultValues={{
